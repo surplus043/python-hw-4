@@ -22,7 +22,9 @@ class Inquiry(BaseModel):  # вводные данные для запроса
     phone_number: str
     email: str
 
-    reason: Reason  # т.к. данные введены через enum, другие виды обращения будут отсеиваться с 422
+    # т.к. данные введены через enum, другие виды обращения будут отсеиваться с 422
+    # третья задача, несколько причин обращения, set уберет дубликаты если они есть
+    reasons: set[Reason]
     detection_time: datetime.datetime
 
 
