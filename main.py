@@ -2,11 +2,12 @@ import time
 import asyncio
 import datetime
 import json
+import re
 
 from enum import Enum
 from pathlib import Path
 from fastapi import FastAPI, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class Reason(str, Enum):  # заводим причины обращения
@@ -27,6 +28,29 @@ class Inquiry(BaseModel):  # вводные данные для запроса
     reasons: set[Reason]
     detection_time: datetime.datetime
 
+    #дополнительные валидаторы
+    @field_validator("name","surname")
+    @classmethod
+    def check_name(c,s:str) -> str:
+        if not(s[0].isupper() and s.isalpha()):
+            raise ValueError("Not a valid name (must be capitalized, no numbers or special characters)")
+        return s
+    
+    @field_validator("phone_number")
+    @classmethod
+    def check_phone(c,s:str) -> str:
+        if not(s[0]=='+' and s[1:].isdecimal()): #простая проверка на интернациональный формат номера телефона без ограничений по длине
+            raise ValueError("Not a valid phone number (must start with +, no non-numerical characters for the rest of the string)")
+        return s
+
+    @field_validator("email")
+    @classmethod
+    def check_email(c,s:str) -> str:
+        #regex для эмейла, пример взят с geeksforgeeks
+        regex = r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,7}"
+        if not(re.fullmatch(regex,s)): #простая проверка на интернациональный формат номера телефона без ограничений по длине
+            raise ValueError("Not a valid email.")
+        return s
 
 app = FastAPI()
 
@@ -49,3 +73,4 @@ async def create_inquiry(inquiry: Inquiry):
         with f_path.open(mode="w", encoding="utf-8") as f:
             f.write(j)
         return status.HTTP_201_CREATED
+
